@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Valentine AI</title>
+    <title>Valentine RP</title>
     <style>
         :root {
             --accent: #ff4d6d;
-            --accent-soft: #ffccd5;
+            --accent-dark: #c9184a;
             --bg: #fffbfb;
             --text: #2d3436;
             --bot-bubble: #ffffff;
@@ -28,126 +28,138 @@
         }
 
         header {
-            padding: 15px;
+            padding: 12px 20px;
             background: white;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid var(--accent-soft);
+            border-bottom: 1px solid #ffccd5;
             box-shadow: 0 4px 12px var(--shadow);
             z-index: 10;
         }
 
-        .header-left { display: flex; align-items: center; gap: 8px; }
-        header h1 { margin: 0; font-size: 1.1rem; color: var(--accent); font-weight: 800; text-transform: uppercase; }
-        #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+        .header-left h1 { margin: 0; font-size: 1rem; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; }
         
-        .clear-btn { 
-            font-size: 0.7rem; background: none; border: 1px solid var(--accent); 
-            color: var(--accent); padding: 4px 8px; border-radius: 12px; cursor: pointer;
+        .controls { display: flex; gap: 8px; }
+        .btn { 
+            font-size: 0.7rem; background: white; border: 1px solid var(--accent); 
+            color: var(--accent); padding: 5px 10px; border-radius: 20px; cursor: pointer;
+            transition: 0.2s;
         }
+        .btn.active { background: var(--accent); color: white; }
 
         #chat-container {
             flex: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 15px;
+            display: flex; flex-direction: column; gap: 12px;
+            background-image: radial-gradient(#ffccd5 0.5px, transparent 0.5px);
+            background-size: 20px 20px;
         }
 
         .message {
-            max-width: 85%; padding: 12px 16px; border-radius: 18px;
-            font-size: 0.95rem; line-height: 1.4; animation: slideUp 0.3s ease-out;
+            max-width: 85%; padding: 14px 18px; border-radius: 22px;
+            font-size: 0.95rem; line-height: 1.5; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: pre-wrap;
         }
 
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 
-        .bot { align-self: flex-start; background: var(--bot-bubble); border: 1px solid var(--accent-soft); border-bottom-left-radius: 4px; }
-        .user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+        .bot { align-self: flex-start; background: var(--bot-bubble); border: 1px solid #ffccd5; border-bottom-left-radius: 4px; color: #444; }
+        .user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px var(--shadow); }
+
+        /* Styling for asterisks in RP */
+        .bot em { color: var(--accent-dark); font-style: italic; opacity: 0.8; }
 
         .input-wrapper {
             background: white; padding: 10px 15px 30px 15px;
-            border-top: 1px solid var(--accent-soft); display: flex; gap: 10px;
+            border-top: 1px solid #eee; display: flex; gap: 10px; align-items: center;
         }
 
-        input { flex: 1; padding: 12px 18px; border: 2px solid #f0f0f0; border-radius: 25px; outline: none; font-size: 1rem; }
-        .send-btn { background: var(--accent); border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .send-btn svg { fill: white; width: 18px; height: 18px; }
-        .loader { display: none; font-size: 0.8rem; color: var(--accent); padding: 0 25px 10px; font-style: italic; }
+        input { flex: 1; padding: 14px 20px; border: 2px solid #f8f8f8; border-radius: 30px; outline: none; font-size: 1rem; background: #fafafa; }
+        input:focus { border-color: var(--accent); background: white; }
+
+        .send-btn { background: var(--accent); border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .send-btn svg { fill: white; width: 20px; height: 20px; }
+        
+        .loader { display: none; font-size: 0.75rem; color: var(--accent); padding: 0 25px 8px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <header>
     <div class="header-left">
-        <div id="status-dot"></div>
         <h1>Valentine</h1>
     </div>
-    <button class="clear-btn" onclick="clearMemory()">Clear Chat</button>
+    <div class="controls">
+        <button class="btn" id="rpToggle" onclick="toggleRP()">RP: OFF</button>
+        <button class="btn" onclick="clearChat()">Reset</button>
+    </div>
 </header>
 
 <div id="chat-container"></div>
-
-<div id="loader" class="loader">Valentine is thinking...</div>
+<div id="loader" class="loader">Valentine is typing...</div>
 
 <div class="input-wrapper">
-    <input type="text" id="userInput" placeholder="Message..." autocomplete="off">
+    <input type="text" id="userInput" placeholder="Say something..." autocomplete="off">
     <button class="send-btn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
 </div>
 
 <script>
-    // --- SETTINGS ---
-    const API_KEY = "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"; 
+    const API_KEY = "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";
     const MODEL = "llama-3.3-70b-versatile";
 
-    let messages = JSON.parse(localStorage.getItem('valentine_chat')) || [
-        { role: "system", content: "You are Valentine, a chill, supportive, and grounded companion for August. You have a memory and can refer back to things August has said. Keep responses concise and authentic." }
-    ];
+    let isRPMode = false;
+    let messages = JSON.parse(localStorage.getItem('val_rp_v1')) || [];
+
+    const systemPrompt = {
+        role: "system",
+        content: `You are Valentine, a 21-year-old guy with a chill, protective, and slightly witty personality. 
+        You are talking to August. You aren't an AI; you're a real person in this conversation. 
+        - Use casual lowercase occasionally.
+        - Use asterisks for actions like *tilts head* or *sighs softly*.
+        - Be supportive but grounded. 
+        - Avoid being overly formal or "robotic."
+        - Keep responses concise but immersive.`
+    };
 
     const chatContainer = document.getElementById('chat-container');
     const userInput = document.getElementById('userInput');
     const loader = document.getElementById('loader');
-    const statusDot = document.getElementById('status-dot');
 
-    // Initial load
     window.onload = () => {
-        if (API_KEY !== "YOUR_GROQ_API_KEY_HERE") statusDot.style.background = "#2ecc71";
-        renderChat();
+        if (messages.length === 0) {
+            messages.push(systemPrompt);
+            appendDOMMessage("hey august. i've been waiting for you to drop by. *smiles and leans against the wall* what's up?", 'bot');
+        } else {
+            renderChat();
+        }
     };
 
-    function renderChat() {
-        chatContainer.innerHTML = '';
-        messages.forEach(msg => {
-            if (msg.role !== 'system') {
-                appendDOMMessage(msg.content, msg.role === 'user' ? 'user' : 'bot');
-            }
-        });
-        if (messages.length === 1) {
-            appendDOMMessage("Yo August. I'm here. What's on your mind?", 'bot');
-        }
+    function toggleRP() {
+        isRPMode = !isRPMode;
+        document.getElementById('rpToggle').innerText = `RP: ${isRPMode ? 'ON' : 'OFF'}`;
+        document.getElementById('rpToggle').classList.toggle('active');
     }
 
     async function sendMessage() {
         const text = userInput.value.trim();
-        if (!text || API_KEY === "YOUR_GROQ_API_KEY_HERE") return;
+        if (!text || API_KEY.includes("YOUR_GROQ")) return;
 
-        // Update UI and Memory
         appendDOMMessage(text, 'user');
         messages.push({ role: "user", content: text });
         userInput.value = '';
         loader.style.display = 'block';
-        chatContainer.scrollTop = chatContainer.scrollHeight;
 
         try {
             const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                 method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${API_KEY}`,
-                    "Content-Type": "application/json"
-                },
+                headers: { "Authorization": `Bearer ${API_KEY}`, "Content-Type": "application/json" },
                 body: JSON.stringify({
                     model: MODEL,
-                    messages: messages, // Sending the whole memory
-                    temperature: 0.7
+                    messages: messages,
+                    temperature: 0.85, // Higher temp for more "human" variety
+                    max_tokens: 500
                 })
             });
 
@@ -156,28 +168,38 @@
             
             loader.style.display = 'none';
             messages.push({ role: "assistant", content: reply });
-            saveMemory();
+            localStorage.setItem('val_rp_v1', JSON.stringify(messages));
             appendDOMMessage(reply, 'bot');
-        } catch (error) {
+        } catch (e) {
             loader.style.display = 'none';
-            appendDOMMessage("I'm having trouble remembering right now. Check your key.", 'bot');
+            appendDOMMessage("*frowns slightly* my head hurts... think the connection is dead.", 'bot');
         }
     }
 
     function appendDOMMessage(text, side) {
         const div = document.createElement('div');
         div.className = `message ${side}`;
-        div.innerText = text;
+        
+        // Convert *text* into <em>text</em> for bot actions
+        if (side === 'bot') {
+            div.innerHTML = text.replace(/\*(.*?)\*/g, '<em>*$1*</em>');
+        } else {
+            div.innerText = text;
+        }
+
         chatContainer.appendChild(div);
         chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
     }
 
-    function saveMemory() {
-        localStorage.setItem('valentine_chat', JSON.stringify(messages));
+    function renderChat() {
+        chatContainer.innerHTML = '';
+        messages.forEach(m => {
+            if (m.role !== 'system') appendDOMMessage(m.content, m.role === 'user' ? 'user' : 'bot');
+        });
     }
 
-    function clearMemory() {
-        localStorage.removeItem('valentine_chat');
+    function clearChat() {
+        localStorage.removeItem('val_rp_v1');
         location.reload();
     }
 
